@@ -1,19 +1,4 @@
-# global variables
-symbols = "&|-%+"  # "&|!" (and,or,not,sufficient,necessary,biconditional)
-all_symbols = symbols + "()¬"
-
-def preprocessing_data(string):
-  #Simplify the expression symbols
-  return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-","%").replace("||", "|").replace("&&", "&")
-
-def is_letter(char):
-  return 97<=ord(char)<=122
-
-def is_atomic_sentence(string):
-  if len(string) == 1:
-    return is_letter(string)
-  else:
-    return False
+from task0 import symbols, all_symbols, is_letter, is_atomic_sentence, preprocessing_data, sentence_OK
 
 def main_connector_pos(string):
   open_parentheses = 0
@@ -34,26 +19,24 @@ def handle_not(string):
     if c == "¬":
       return string[1:]
 
-#¬(p&q)
-# main
 
-#string = input("Enter a sentence: ")
-string = "((p&q)|¬r)"
-string = preprocessing_data(string)
-connector_pos = main_connector_pos(string)
-print(divide_sentence(string,connector_pos))
-# input = "(p&&q)"
-# input = "((p || q) && ¬(p && q))"
-# input = "¬¬¬¬¬p"
-# input = "¬¬(¬¬(p && ¬q))"
-# input = "((p-> ¬r) && ¬¬(p || r)) <-> (p && ¬q)"
-# input = "p && q"
-# input = "(p)"
-# input = "(p -> q) || (p -> r)"
-# input = "p -> ((q || p) -> r)"
-# input = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
-# input = "(p -> ¬r) && ¬(¬(p || R) <-> (p && ¬ q))"
-# input = "p454"
-# input = "p123"
-# input = "123"
-'''
+def main_task1_1():
+  #string = input("Enter a sentence: ")
+  string = "((p&q)|¬r)"
+  string = preprocessing_data(string)
+  connector_pos = main_connector_pos(string)
+  print(divide_sentence(string,connector_pos))
+  # input = "(p&&q)"
+  # input = "((p || q) && ¬(p && q))"
+  # input = "¬¬¬¬¬p"
+  # input = "¬¬(¬¬(p && ¬q))"
+  # input = "((p-> ¬r) && ¬¬(p || r)) <-> (p && ¬q)"
+  # input = "p && q"
+  # input = "(p)"
+  # input = "(p -> q) || (p -> r)"
+  # input = "p -> ((q || p) -> r)"
+  # input = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
+  # input = "(p -> ¬r) && ¬(¬(p || R) <-> (p && ¬ q))"
+  # input = "p454"
+  # input = "p123"
+  # input = "123"

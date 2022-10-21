@@ -5,11 +5,15 @@ all_symbols = symbols + "()¬"
 def is_letter(char):
   return 97<=ord(char)<=122
 
+def is_atomic_sentence(string):
+  if len(string) == 1:
+    return is_letter(string)
+  else:
+    return False
+
 def preprocessing_data(string):
   #Simplify the expression symbols
   return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-","%").replace("||", "|").replace("&&", "&")
-
-# functions
 
 def letters_together(string):
   # Checks if the string contains two letters together
@@ -63,25 +67,26 @@ def check_necessary_conditions(string):
   return (parentheses_match(string) and closed_parentheses(string) and not symbols_together(string) and not letters_together(string) and not bad_characters(string))
 
 def check_sufficient_conditions(string):
-  if len(string) == 1:
-    return is_letter(string)
-  else:
+  return is_atomic_sentence(string)
+
+def sentence_OK(string):
+  string = preprocessing_data(string)
+  if check_sufficient_conditions(string): # The sentence is OK
+    return True
+  elif not check_necessary_conditions(string): # The sentence is not OK
     return False
-  
-# main
-string = input("Enter a sentence: ")
-string = preprocessing_data(string)
+  else: # I don't know if the sentence is OK
+    return None
 
-# print(parentheses_match(string))
-# print(closed_parentheses(string))
-# print(not symbols_together(string))
-# print(not letters_together(string))
-# print(not bad_characters(string))
-# print(string)
-
-if check_sufficient_conditions(string):
-  print("The sentence is OK")
-elif not check_necessary_conditions(string):
-  print("The sentence is not OK")
-else:
-  print("I don't know if the sentence is OK")
+def main_task0():
+  # Test Task0
+  string = input("Enter a sentence: ")
+  string = preprocessing_data(string)
+  ok = sentence_OK(string)
+  if ok == None:
+    print("I don't know if the sentence is OK")
+  elif ok:
+    print("The sentence is OK")
+  else:
+    print("The sentence is not OK")
+    
