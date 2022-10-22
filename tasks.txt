@@ -1,0 +1,34 @@
+===============================================================
+task 0: say if the sentence is ok or no ok
+
+Possible errors:
+- 2 letters together											                                    Ex: "(pq&p)"
+- 2 symbols (including parentheses) together							                    Ex: "()p&q", Ex: "p&&q"
+- parentheses don't match (there are more "(" than ")" or vice versa)			    Ex: "((p&q)|p"		: there are more "(" than ")"
+- in some moment there are more ")" than "("							                    Ex: "(p&q))(q->p)("	: in pos 5 there are more ")" than "("
+- there are other characters appart from letters and the appropiate symbols		Ex: "p&q/@%"
+
+
+
+===============================================================
+task 1.1: make a program that makes sytactic trees
+
+Decompose the string until the end, and save every step to a list.
+
+Do this recursively until the string is an atomic sentence:
+	1. Divide the string into 2 by the main connector (the one inside only 1 parentesis)
+	2. Handle ¬ (not) in both parts
+Then print recursively each element of the list.
+
+
+["((p&q)|¬r)"]
+["(p&q)", "¬r"]	    # divide by main connector
+["(p&q)", ["r"]]	  # handle not
+[["p","q"],["r"]]	  # divide by main connector
+[["p","q"],["r"]]	  # handle not
+
+--- Console ---
+((p&q)|¬r)
+(p&q), ¬r
+(p&q), r
+p, q, r

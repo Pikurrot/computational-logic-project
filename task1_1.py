@@ -15,7 +15,10 @@ def main_connector_pos(string):
 def divide_sentence(string, connector_pos):
   # Returns the two parts of the string separated by the main connector, excluding outer parentheses
   return string[1:connector_pos], string[connector_pos+1:-1]
-  # ((p&q)|¬r)
+
+def divide_by_main_connector(string):
+  # Returns a list of the 2 parts divided by the main connector
+  pass
 
 def handle_not(string):
   # Returns the string without the outer ¬ (not). If no outer ¬, the string is returned
@@ -24,6 +27,13 @@ def handle_not(string):
   else:
     return string
 
+def syntactic_tree(tree_lst):
+  # Builds recursively the syntactic tree. 
+  pass
+
+def print_tree(tree_lst):
+  # Prints recursively the syntactic tree. 
+  pass
 
 def main_task1_1():
   #string = input("Enter a sentence: ")
