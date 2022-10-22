@@ -18,10 +18,11 @@ def divide_sentence(string, connector_pos):
   # ((p&q)|¬r)
 
 def handle_not(string):
-  # Returns the string without the outer ¬ (not)
-  for c in string:
-    if c == "¬":
-      return string[1:]
+  # Returns the string without the outer ¬ (not). If no outer ¬, the string is returned
+  if string[0] == "¬":
+    return string[1:]
+  else:
+    return string
 
 
 def main_task1_1():
