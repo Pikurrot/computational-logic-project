@@ -18,14 +18,26 @@ Decompose the string until the end, and save every step to a list.
 Do this recursively until the string is an atomic sentence:
 	1. Divide the string into 2 by the main connector (the one inside only 1 parentesis)
 	2. Handle ¬ (not) in both parts
-Then print recursively each element of the list.
+* Check that the sentence is OK before each step (task0)
+Then print the steps of the list.
 
 
-["((p&q)|¬r)"]
-["(p&q)", "¬r"]	    # divide by main connector
-["(p&q)", ["r"]]	  # handle not
-[["p","q"],["r"]]	  # divide by main connector
-[["p","q"],["r"]]	  # handle not
+1 - ["((p&q)|¬r)"]
+2 - ["(p&q)", "¬r"]	    # divide by main connector
+3 - ["(p&q)", ["r"]]	  # handle not
+4 - [["p","q"],["r"]]	  # divide by main connector
+5 - [["p","q"],["r"]]	  # handle not
+
+At the same time, every step is saved in this list:
+1 - ["((p&q)|¬r)"]
+2 - [["((p&q)|¬r)"], ["(p&q)", "¬r"]]
+3 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]]]
+4 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]], [["p","q"],["r"]]]
+5 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]], [["p","q"],["r"]]]  # The list remains the same as the step is the same as the previous one
+
+Printing the nested list:
+  1. Each element is a step. Print 1 step per line.
+  2. Each step is a list of the parts. The line will be each part separated by comma.
 
 --- Console ---
 ((p&q)|¬r)
