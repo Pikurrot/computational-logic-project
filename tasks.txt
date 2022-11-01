@@ -11,7 +11,7 @@ Possible errors:
 
 
 ===============================================================
-task 1.1: make a program that makes sytactic trees
+task 1.1: make a program that makes sytactic trees (version 1 - doesn't work)
 
 Decompose the string until the end, and save every step to a list.
 
@@ -30,10 +30,24 @@ Then print the steps of the list.
 
 At the same time, every step is saved in this list:
 1 - ["((p&q)|¬r)"]
-2 - [["((p&q)|¬r)"], ["(p&q)", "¬r"]]
-3 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]]]
-4 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]], [["p","q"],["r"]]]
-5 - [["((p&q)|¬r)"], ["(p&q)", "¬r"], ["(p&q)", ["r"]], [["p","q"],["r"]]]  # The list remains the same as the step is the same as the previous one
+
+2 - [["((p&q)|¬r)"], 
+    ["(p&q)", "¬r"]]
+
+3 - [["((p&q)|¬r)"], 
+    ["(p&q)", "¬r"], 
+    ["(p&q)", ["r"]]]
+
+4 - [["((p&q)|¬r)"], 
+    ["(p&q)", "¬r"], 
+    ["(p&q)", ["r"]], 
+    [["p","q"],["r"]]]
+
+5 - [["((p&q)|¬r)"], 
+    ["(p&q)", "¬r"], 
+    ["(p&q)", ["r"]], 
+    [["p","q"],["r"]]]
+  # The list remains the same as the step is the same as the previous one
 
 Printing the nested list:
   1. Each element is a step. Print 1 step per line.
@@ -44,3 +58,46 @@ Printing the nested list:
 (p&q), ¬r
 (p&q), r
 p, q, r
+
+
+- Quan s'acaba la funció syntactic_tree?
+  Quan tots els elements de la llista són atomic sentences.
+- Com sap cada part de quina part prèvia prové?
+- Com es fa per saber que "(pp&q)" està bé però "pp" no?
+
+===============================================================
+task 1.1: make a program that makes sytactic trees (version 2)
+
+Steps:
+if sentence is not ok:
+  print error and stop the program
+elif is atomic sentence:
+  don't touch it
+else:
+  new_sentence = divide_by_main_conector
+  if new_sentence == old_sentence:
+    new_sentence = handle_not
+  add the child (with value = new_sentence) to the list
+
+- Put the parent sentence in a list
+- Make the steps and save the children in the same list, removing the parent
+- Repeat the process
+
+Example:
+A = "((p&q)|¬r)"
+AA = "(p&q)"
+AB = "¬r"
+AAA = "p"
+AAB = "q"
+ABA = "r"
+
+1 - [A]
+2 - [AA,AB]
+3 - [AAA,AAB,ABA] # List with the atomic sentences
+
+To print the tree, print as much lines as atomic sentences, with their parents, grandparents... in the left:
+((p&q)|¬r) ==> (p&q) ==> p
+((p&q)|¬r) ==> (p&q) ==> q
+((p&q)|¬r) ==> ¬r ==> r
+
+- Com es fa per saber que "(pp&q)" està bé però "pp" no?

@@ -5,11 +5,24 @@ all_symbols = symbols + "()¬"
 def is_letter(char):
   return 97<=ord(char)<=122
 
+def is_number(char):
+  return 48<=ord(char)<=57
+
+def bad_characters(string):
+# Checks if there are bad characters
+  for c in string:
+    if(not is_letter(c) and c not in all_symbols):
+      return True
+  return False
+
+# p
+# p123
 def is_atomic_sentence(string):
-  if len(string) == 1:
-    return is_letter(string)
-  else:
-    return False
+  if len(string) > 1:
+    for c in string[1:]:
+      if not is_number(c):
+        return False
+  return is_letter(string[0])
 
 def preprocessing_data(string):
   #Simplify the expression symbols
@@ -55,13 +68,6 @@ def closed_parentheses(string):
     if closed_parentheses > open_parentheses:
       return False
   return True
-
-def bad_characters(string):
-# Checks if there are bad characters
-  for c in string:
-    if(not is_letter(c) and c not in all_symbols):
-      return True
-  return False
 
 def check_necessary_conditions(string):
   return (parentheses_match(string) and closed_parentheses(string) and not symbols_together(string) and not letters_together(string) and not bad_characters(string))
