@@ -2,25 +2,25 @@ from task0 import symbols, all_symbols, is_letter, is_atomic_sentence, preproces
 
 class Sentence:
   def __init__(self,value,parent):
+    self.value = value
     self.parent = parent
     self.children = []
-    self.value = value
   
   def add_children(self,list_of_children):
     for string in list_of_children:
       self.children.append(Sentence(string,parent=self))
 
-  def get_parent(self):
-    return self.parent
-
   def get_value(self):
     return self.value
+    
+  def get_parent(self):
+    return self.parent
 
   def get_children(self):
     return self.children
 
   def __str__(self):
-    return(self.value)
+    return self.value
   
 def main_connector_pos(string):
   # Returns the position of the main connector (the one inside only 1 parentesis). If no main connector, returns None
@@ -59,60 +59,35 @@ def sentences_are_atomic(list_sentences):
   return True  
 
 def syntactic_tree(string_founder):
-  # Builds recursively the syntactic tree. 
+  # Builds the syntactic tree.
   a = Sentence(string_founder, parent=None)
   list_sentences = [a]
-  
-  while not sentences_are_atomic(list_sentences):
-    list_sentences_new = []
+  while not sentences_are_atomic(list_sentences): # repeat until all sentences are atomic
+    list_sentences_cousins = []
     for sentence in list_sentences:
-      divided_string = divide_by_main_connector(sentence.value)
-      if divided_string == sentence.value:
-        alt_string = handle_not(sentence.value)
-        sentence.add_children([alt_string])
-      else:
+      print("sentence:",sentence)
+      alt_string = handle_not(sentence.value) # alternative string without the ¬
+      print("handle not:",alt_string)
+      if alt_string == sentence.value: # if the sentence has not changed
+        divided_string = divide_by_main_connector(sentence.value) # list of the 2 parts of the divided string
+        print("divided:",divided_string)
         sentence.add_children(divided_string)
-      list_sentences_new.extend(sentence.get_children())
-    list_sentences = list_sentences_new[:]
-#
+      else:
+        sentence.add_children([alt_string])
+      list_sentences_cousins.extend(sentence.get_children()) # add children to list of cousins (otherwise, we end only with the children of one of the parents)
+    list_sentences = list_sentences_cousins[:] # update the list with the list of cousins, so the process can be repeated again with each cousin as a parent
+  for s in list_sentences:
+    print(s)
 
 def print_tree(tree_lst):
-  # Prints recursively the syntactic tree.
+  # Prints the syntactic tree.
   pass
 
 def main_task1_1():
   #string = input("Enter a sentence: ")
-  string = "((p&q)|¬r)"
+  string = "((p&q)|¬r)"    # works
+  string = "((p&q)|(¬r))"  # error with (¬r)
+  string = preprocessing_data(string)
   syntactic_tree(string)
-  # input = "(p&&q)"
-  # input = "((p || q) && ¬(p && q))"
-  # input = "¬¬¬¬¬p"
-  # input = "¬¬(¬¬(p && ¬q))"
-  # input = "((p-> ¬r) && ¬¬(p || r)) <-> (p && ¬q)"
-  # input = "p && q"
-  # input = "(p)"
-  # input = "(p -> q) || (p -> r)"
-  # input = "p -> ((q || p) -> r)"
-  # input = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
-  # input = "(p -> ¬r) && ¬(¬(p || R) <-> (p && ¬ q))"
-  # input = "p454"
-  # input = "p123"
-  # input = "123"
-
-
-
-#Pseudocode
-
-
-
-
-a = Sentence("((p&q)|¬r)",parent=None)
-a.add_children(["(p&q)","¬r"])
-
-
-
-
-
-
 
 
