@@ -101,3 +101,4 @@ To print the tree, print as much lines as atomic sentences, with their parents, 
 ((p&q)|¬r) ==> ¬r ==> r
 
 - Com es fa per saber que "(pp&q)" està bé però "pp" no?
+- El not sempre va fora de parentesis
