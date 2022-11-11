@@ -59,28 +59,32 @@ def handle_not(string):
 
 def sentences_are_atomic(list_sentences):
   # Returns True if any of the sentences in the list is atomic
-  for c in list_sentences:
-    if not is_atomic_sentence(c.get_value()):
+  for sentence in list_sentences:
+    if not is_atomic_sentence(sentence.get_value()):
       return False
   return True  
 
-def syntactic_tree(string_founder):
-  # Builds the syntactic tree.
-  a = Sentence(string_founder)
-  list_sentences = [a]
+def syntactic_tree(string_founder,list_sentences):
+  # Builds the syntactic tree layer by layer (not branch by branch).
   while not sentences_are_atomic(list_sentences): # repeat until all sentences are atomic
-    list_sentences_cousins = []
+    list_sentences_cousins = [] # list to save, as a layer, the children made at every branch
     for sentence in list_sentences:
-    
-      divided_string = divide_by_main_connector(sentence.value) # list of the 2 
-      if divided_string == sentence.value: # if the sentence has not changed
-        alt_string = handle_not(sentence.value) # alternative string without the ¬ parts of the divided string
-        sentence.add_children([alt_string])
+      divided_string = divide_by_main_connector(sentence.value) # list of the 2 parts of the divided string
+      error = "" in divided_string and type(divided_string) == list # If there is "" in divided_string, this means that sentence was not OK
+      if error:
+        list_sentences_cousins.extend([sentence])
       else:
-        sentence.add_children(divided_string)
-      list_sentences_cousins.extend(sentence.get_children()) # add children to list of cousins (otherwise, we end only with the children of one of the parents)
-    list_sentences = list_sentences_cousins[:] # update the list with the list of cousins, so the process can be repeated again with each cousin as a parent
-  return list_sentences
+        if divided_string == sentence.value: # if the sentence has not changed
+          alt_string = handle_not(sentence.value) # alternative string without the ¬
+          sentence.add_children([alt_string])
+        else:
+          sentence.add_children(divided_string)
+        list_sentences_cousins.extend(sentence.get_children()) # add children to list of cousins (otherwise, we end up only with the children of one of the parents, i.e. only the last branch would be saved)
+    # update the list with the list of cousins, so the process can be repeated again with each cousin as a parent
+    # Note: we can't do "list_sentences = list_sentences_cousins.copy()" because as lists are mutable, we would lose the adress of the original list by using the "=" operator.
+    list_sentences.clear()
+    list_sentences.extend(list_sentences_cousins)
+    assert (not error), "The expression " + sentence.get_value()+" is not a formula in propositional logic." # exit the function if any error
 
 def print_tree(tree_lst):
   # Prints the syntactic tree.
@@ -91,20 +95,28 @@ def print_tree(tree_lst):
     while parent.get_parent() != None:
       # Adds the parent of the parent in the left of string
       parent = parent.get_parent()
-      string = parent.get_value() + "     " + string
+      string = parent.get_value() + " ====> " + string
     print(string)
 
 def main_task1_1():
   #string = input("Enter a sentence: ")
-  string = "((p&q)|¬r)"
-  string = "¬¬((p&q)|(¬r&q))" #now it works
+  string = "(||r)"
+  string = "¬(¬r)"
+  #string = "((p&&q)&&(||r))"
+  #string = "((p&&q)&&r)"
   # ================= Things we must do: =================
   #Also "¬" must always be outside parentheses, if it isn't Sentence is not OK. we can solve this:
-    #task 0 (sentenceis not OK when (¬r))
+    #task 0 (sentences not OK when (¬r))
     #handle not pos[1] never happens
-    # try/except
   #Also the syntactic tree stops building when there is a not OK sentence. Managing errors.
-  #
+  # Note: ""(pp&q)"" is OK but "pp" is not OK
   string = preprocessing_data(string)
-  tree_lst = syntactic_tree(string)
-  print_tree(tree_lst)
+  a = Sentence(string)
+  tree_lst = [a]
+  try:
+    syntactic_tree(string,tree_lst)
+    print_tree(tree_lst)
+  except AssertionError as message:
+    print_tree(tree_lst)
+    print(message)
+    print("The Syntactic Tree was aborted.")

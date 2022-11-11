@@ -15,8 +15,6 @@ def bad_characters(string):
       return True
   return False
 
-# p
-# p123
 def is_atomic_sentence(string):
   if len(string) > 1:
     for c in string[1:]:
