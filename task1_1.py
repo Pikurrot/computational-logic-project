@@ -90,7 +90,7 @@ def meta_sentence(string):
 				return string
 	# substitute subsentences with meta language
 	for sub_sentence,meta_letter in zip(sub_sentences,meta_language):
-		string = string.replace(sub_sentence,meta_letter)
+		string = string.replace(sub_sentence,meta_letter,1)
 	return string
 
 def is_meta_sentence_OK(string):
@@ -148,7 +148,7 @@ def print_tree(tree_lst):
 
 def main_task1_1():
 	string = input("Enter a sentence: ")
-	#string = "((¬¬((p&&q)||¬r)&&q)||¬p)"
+	#string = "((r -> ¬¬(p -> r))->r)"
 	string = preprocessing_data(string)
 	founder = Sentence(string) # the founder sentence that will build the tree
 	tree_lst = [founder]
