@@ -42,7 +42,7 @@ class Sentence:
     return self.value
   
 def main_connector_pos(string):
-  # Returns the position of the main connector (the one inside only 1 parentesis). If no main connector, or first character is "¬", returns None
+  # Returns the position of the main connector (the one inside only 0 parentesis). If no main connector, or first character is "¬", returns None
   if string[0] == "¬":
     return None
   open_parentheses = 0
@@ -54,10 +54,26 @@ def main_connector_pos(string):
     elif string[i] == ")":
       open_parentheses -= 1
   return None
+
+def relative_main_connector_pos(string):
+  if string[0] == "¬":
+    return None
+  open_parentheses = 0
+  Lpositions = []
+  Lopen_parentheses = []
+  for i in range(len(string)):
+    if string[i] in symbols:
+      Lpositions.append(i)
+      Lopen_parentheses.append(open_parentheses)
+    if string[i] == "(":
+      open_parentheses += 1
+    elif string[i] == ")":
+      open_parentheses -= 1
+    # ha de agafar el conector que te menys parentesis (x) i despres treureli x parentesis a cada banda
   
 def divide_sentence(string, connector_pos):
   # Returns the 2 parts of the string separated by a connector, excluding outer parentheses
-  return string[1:connector_pos], string[connector_pos+1:-1]
+  return string[:connector_pos], string[connector_pos+1:]
 
 def divide_by_main_connector(string):
   # Returns a list of the 2 parts divided by the main connector
@@ -81,6 +97,7 @@ def meta_sentence(string):
   meta_language = "AB"
   # extract subsentences
   sub_sentences = divide_by_main_connector(string)
+  print(sub_sentences)
   if sub_sentences == string:
     sub_sentences = [handle_not(string)]
     if sub_sentences[0] == string:
@@ -96,7 +113,8 @@ def meta_sentence(string):
 def is_meta_sentence_OK(string):
   # True if the meta sentence of string is in the set of OK_sentences
   sentence = meta_sentence(string)
-  OK_sentences = ("A", "¬A", "(A&B)", "(A|B)", "(A-B)", "(A%B)", "(A+B)")
+  print(sentence)
+  OK_sentences = ("A", "¬A", "A&B", "A|B", "A-B", "A%B", "A+B")
   return sentence in OK_sentences
 
 def sentences_are_atomic(list_sentences):
@@ -145,8 +163,8 @@ def print_tree(tree_lst):
       string = parent.get_value() + "  ==>  " + string
     print(string)
 
-def main_task1_1():
-  print("task 1.1")
+def main_task1_2():
+  print("task 1.2")
   string = input("Enter a sentence: ")
   #string = "((r -> ¬¬(p -> r))->r)"
   string = preprocessing_data(string)

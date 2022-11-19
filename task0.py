@@ -83,7 +83,7 @@ def sentence_OK(string):
     return None
 
 def main_task0():
-  # Test Task0
+  print("task 0")
   string = input("Enter a sentence: ")
   string = preprocessing_data(string)
   ok = sentence_OK(string)
