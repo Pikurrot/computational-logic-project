@@ -63,21 +63,23 @@ def main_connector_pos(string):
 	return None
 
 
-def relative_main_connector_pos(string):
+def remove_outer_parentheses(string):
+	# Returns the string without the outter unnecessary parentheses
 	if string[0] == "¬":
 		return None
 	open_parentheses = 0
-	Lpositions = []
 	Lopen_parentheses = []
 	for i in range(len(string)):
 		if string[i] in symbols:
-			Lpositions.append(i)
 			Lopen_parentheses.append(open_parentheses)
 		if string[i] == "(":
 			open_parentheses += 1
 		elif string[i] == ")":
 			open_parentheses -= 1
-		# ha de agafar el conector que te menys parentesis (x) i despres treureli x parentesis a cada banda
+	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
+#--------------------------------------------------------------------------------------
+# We finished here
+#--------------------------------------------------------------------------------------
 
 
 def divide_sentence(string, connector_pos):
@@ -184,14 +186,15 @@ def print_tree(tree_lst):
 def main_task1_2():
 	print("task 1.2")
 	string = input("Enter a sentence: ")
-	#string = "((r -> ¬¬(p -> r))->r)"
+	#string = "(((p&q)|r))"
 	string = preprocessing_data(string)
-	founder = Sentence(string)  # the founder sentence that will build the tree
-	tree_lst = [founder]
-	try:
-		syntactic_tree(tree_lst)
-		print_tree(tree_lst)
-	except AssertionError as message:
-		print_tree(tree_lst)  # here the tree will be printed until the layer with the error
-		print(message)
-		print("The Syntactic Tree was aborted.")
+	print(remove_outer_parentheses(string))
+	# founder = Sentence(string)  # the founder sentence that will build the tree
+	# tree_lst = [founder]
+	# try:
+	# 	syntactic_tree(tree_lst)
+	# 	print_tree(tree_lst)
+	# except AssertionError as message:
+	# 	print_tree(tree_lst)  # here the tree will be printed until the layer with the error
+	# 	print(message)
+	# 	print("The Syntactic Tree was aborted.")
