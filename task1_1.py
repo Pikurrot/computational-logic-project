@@ -54,7 +54,7 @@ def main_connector_pos(string):
 		return None
 	open_parentheses = 0
 	for i in range(len(string)):
-		if open_parentheses == 0 and string[i] in symbols:
+		if open_parentheses == 1 and string[i] in symbols:
 			return i
 		if string[i] == "(":
 			open_parentheses += 1

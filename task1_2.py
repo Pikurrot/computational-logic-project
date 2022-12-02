@@ -77,6 +77,7 @@ def remove_outer_parentheses(string):
 		elif string[i] == ")":
 			open_parentheses -= 1
 	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
+	
 #--------------------------------------------------------------------------------------
 # We finished here
 #--------------------------------------------------------------------------------------
