@@ -167,16 +167,13 @@ def print_tree(tree_lst):
 
 
 def remove_repeated_sentences(lst):
-	values = []
-	not_repeated = []
-	for sentence in lst:
-		val = sentence.get_value()
-		if val not in values:
-			values.append(val)
-			not_repeated.append(sentence)
+	# return a list with the sentences which their values are not repeated
+	values = [sentence.get_value() for sentence in lst]
+	not_repeated = [sentence for i,sentence in enumerate(lst) if sentence.get_value() not in values[:i]]
 	return not_repeated
 
 def get_branch(sentence):
+	# return the sentence with all its branch until the founder
 	if sentence.get_parent() == None: return (sentence,)
 	else: return (sentence,)+get_branch(sentence.get_parent())
 
@@ -185,16 +182,16 @@ def get_header(tree_lst):
 	header = tree_lst[:]
 	all_sentences = []
 	for branch in header: all_sentences.extend(get_branch(branch))
-	counter = max([branch.get_depth() for branch in header]) - 1 # start counter from "-1, as the last depth has been already appended
-	while counter >= 0: # iterate from the deepest-1 to the 0 depth
-		header.extend([sentence for sentence in all_sentences if sentence.get_depth() == counter])
+	counter = max([branch.get_depth() for branch in header]) # start counter from the last depth
+	while counter > 0: # iterate from the deepest to the 0 depth
 		counter -= 1
+		header.extend([sentence for sentence in all_sentences if sentence.get_depth() == counter])
 	return remove_repeated_sentences(header)
 
 def main_task3():
 	print("task 3")
-	string = input("Enter a sentence: ")
-	#string = "((p&(q|¬r))&¬p)"
+	#string = input("Enter a sentence: ")
+	string = "((p&(q|¬r))&¬p)"
 	string = preprocessing_data(string)
 	founder = Sentence(string)  # the founder sentence that will build the tree
 	tree_lst = [founder]
