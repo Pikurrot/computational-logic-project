@@ -1,4 +1,5 @@
-symbols = "&|-%+"  # "&|!" (and,or,sufficient,necessary,biconditional)
+import numpy as np
+symbols = "&|-%+"  # (and,or,sufficient,necessary,biconditional)
 all_symbols = symbols + "()¬"
 
 
@@ -21,36 +22,6 @@ def is_atomic_sentence(string):
 def preprocessing_data(string):
 	#Simplify the expression symbols
 	return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-", "%").replace("||", "|").replace("&&", "&")
-
-
-class Sentence:
-
-	def __init__(self, value, parent=None):
-		# Each sentence object has 3 parameters: the sentence as a string (value), the sentence of which it comes (parent) and the subsentences that can be formed from that sentence (children)
-		self._value = value
-		self._parent = parent
-		self._children = []
-		if self._parent == None: self._depth = 0
-		else: self._depth = self._parent.get_depth() + 1
-
-	def add_children(self, list_of_children):
-		for string in list_of_children:
-			self._children.append(Sentence(string, parent=self))
-
-	def get_value(self):
-		return self._value
-
-	def get_parent(self):
-		return self._parent
-
-	def get_children(self):
-		return self._children
-
-	def get_depth(self):
-		return self._depth
-
-	def __str__(self):
-		return self._value
 
 
 def main_connector_pos(string):
@@ -117,6 +88,50 @@ def is_meta_sentence_OK(string):
 	return sentence in OK_sentences
 
 
+class Sentence:
+
+	def __init__(self, value, parent=None):
+		# Each sentence object has 3 parameters: the sentence as a string (value), the sentence of which it comes (parent) and the subsentences that can be formed from that sentence (children)
+		self._value = value
+		self._parent = parent
+		self._children = []
+		if self._parent == None: self._depth = 0
+		else: self._depth = self._parent.get_depth() + 1
+
+	def get_value(self):
+		return self._value
+
+	def get_parent(self):
+		return self._parent
+
+	def get_children(self):
+		return self._children
+
+	def get_depth(self):
+		return self._depth
+
+	def add_children(self, list_of_children):
+		for string in list_of_children:
+			self._children.append(Sentence(string, parent=self))
+
+	def get_truth_value(self,values):
+		# Returns the truth value of the sentence
+		A,B = values
+		if meta_sentence(self._value) == "(A&B)": # and
+			return A and B
+		elif meta_sentence(self._value) == "(A|B)": # or
+			return A or B
+		elif meta_sentence(self._value) == "(A-B)": # ->
+			return not(A) or B
+		elif meta_sentence(self._value) == "(A+B)": # <->
+			return A == B
+		elif meta_sentence(self._value) == "(A%B)": # <-
+			return A or not(B) 
+			
+	def __str__(self):
+		return self._value
+
+
 def sentences_are_atomic(list_sentences):
 	# Returns True if any of the sentences in the list is atomic
 	for sentence in list_sentences:
@@ -132,11 +147,11 @@ def syntactic_tree(list_sentences):
 	while not sentences_are_atomic(list_sentences):  # repeat until all sentences are atomic
 		list_sentences_cousins = []  # list to save, as a layer, the children made at every branch
 		for sentence in list_sentences:
-			is_sentence_OK = is_meta_sentence_OK(sentence._value)  # True if the current sentence has no errors
+			is_sentence_OK = is_meta_sentence_OK(sentence.get_value())  # True if the current sentence has no errors
 			if is_sentence_OK and not error and not is_atomic_sentence(sentence.get_value()):
-				divided_string = divide_by_main_connector(sentence._value)  # list of the 2 parts of the divided string
-				if divided_string == sentence._value:  # if the sentence has not changed
-					alt_string = handle_not(sentence._value)  # alternative string without the ¬
+				divided_string = divide_by_main_connector(sentence.get_value())  # list of the 2 parts of the divided string
+				if divided_string == sentence.get_value():  # if the sentence has not changed
+					alt_string = handle_not(sentence.get_value())  # alternative string without the ¬
 					sentence.add_children([alt_string])
 				else:
 					sentence.add_children(divided_string)
@@ -172,10 +187,12 @@ def remove_repeated_sentences(lst):
 	not_repeated = [sentence for i,sentence in enumerate(lst) if sentence.get_value() not in values[:i]]
 	return not_repeated
 
+
 def get_branch(sentence):
 	# return the sentence with all its branch until the founder
 	if sentence.get_parent() == None: return (sentence,)
 	else: return (sentence,)+get_branch(sentence.get_parent())
+
 
 def get_header(tree_lst):
 	# returns a list with the sentences ordered from the deepest to the first in the tree (without repeating)
@@ -188,6 +205,37 @@ def get_header(tree_lst):
 		header.extend([sentence for sentence in all_sentences if sentence.get_depth() == counter])
 	return remove_repeated_sentences(header)
 
+
+def get_main_matrix(header, n_atomic):
+	matrix = np.zeros((2**n_atomic,len(header))) # initialize empty matrix
+	counter = int(2**n_atomic // 2) # e.g., ...4,2,1
+	for col in range(n_atomic):
+		row = 0
+		counter2 = True
+		while row < 2**n_atomic:
+			matrix[row:row+counter,col] = counter2 # set to T/F a group of ...4,2,1 rows
+			row += counter
+			counter2 = not(counter2) # flip every ...4,2,1 rows
+		counter //= 2
+	for col in range(n_atomic,len(header)):
+		# get the sub_sentence
+		sub_sentence = divide_by_main_connector(header[col].get_value())
+		if sub_sentence == header[col].get_value():
+			sub_sentence = handle_not(header[col].get_value())
+		# check for the column of the sub_sentence
+		for c in range(n_atomic+1,len(header)):
+			if header[c] == sub_sentence:
+				pass
+			
+			# --------------- Ens hem quedat aqui -----------------------
+			# if '¬' in header[c]: 
+			# 	alt_string = handle_not(header[c])
+			# if c[0] == '¬' 
+				
+	return matrix
+
+
+	
 def main_task3():
 	print("task 3")
 	#string = input("Enter a sentence: ")
@@ -204,4 +252,7 @@ def main_task3():
 		print("The Syntactic Tree was aborted.")
 
 	print([str(sentence) for sentence in get_header(tree_lst)])
+	n_atomic = len(remove_repeated_sentences(tree_lst))
+	print(get_main_matrix(get_header(tree_lst),n_atomic))
+	# to get the truth value of a sentence, we could make a method in the class that given the value (T or F) of the sub sentences, returns if the metasentence is T or F
 
