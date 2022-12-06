@@ -116,6 +116,8 @@ class Sentence:
 
 	def get_truth_value(self,values):
 		# Returns the truth value of the sentence
+		if len(values) == 1:
+			return not values[0]
 		A,B = values
 		if meta_sentence(self._value) == "(A&B)": # and
 			return A and B
@@ -219,30 +221,40 @@ def get_main_matrix(header, n_atomic):
 		counter //= 2
 	for col in range(n_atomic,len(header)):
 		# get the sub_sentence
-		sub_sentence = divide_by_main_connector(header[col].get_value())
+		sub_sentence = divide_by_main_connector(header[col].get_value()) #(q|¬r) -> [q,¬r]
 		if sub_sentence == header[col].get_value():
-			sub_sentence = handle_not(header[col].get_value())
+			sub_sentence = [handle_not(header[col].get_value())]
 		# check for the column of the sub_sentence
-		for c in range(n_atomic+1,len(header)):
-			if header[c] == sub_sentence:
-				pass
-			
-			# --------------- Ens hem quedat aqui -----------------------
-			# if '¬' in header[c]: 
-			# 	alt_string = handle_not(header[c])
-			# if c[0] == '¬' 
-				
+		columns_pos = [c for c in range(len(header)) if header[c].get_value() in sub_sentence]
+		columns = matrix[:,columns_pos].T
+		for r in range(len(matrix)):
+			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))		
 	return matrix
+	
 
-
+def print_truth_table(header, matrix):
+	header = [str(s) for s in header]
+	header_str = "| "+" | ".join(header)+"|"
+	print("−"*len(header_str))
+	print(header_str)
+	for row in matrix:
+		print("|"+"−"*(len(header_str)-2)+"|")
+		row = ["T" if col == 1 else "F" for col in row]
+		row_lst = []
+		for c in range(len(row)):
+			l = (len(header[c])-1)
+			row_lst.append(l//2*" " + row[c] + l//2*" " + " "*(l%2!=0))
+		print("| "+" | ".join(row_lst)+"|")
+	print("−"*len(header_str))
 	
 def main_task3():
 	print("task 3")
-	#string = input("Enter a sentence: ")
-	string = "((p&(q|¬r))&¬p)"
+	string = input("Enter a sentence: ")
+	# string = "p"
 	string = preprocessing_data(string)
 	founder = Sentence(string)  # the founder sentence that will build the tree
 	tree_lst = [founder]
+	print("\nSyntactic tree\n")
 	try:
 		syntactic_tree(tree_lst)
 		print_tree(tree_lst)
@@ -251,8 +263,10 @@ def main_task3():
 		print(message)
 		print("The Syntactic Tree was aborted.")
 
-	print([str(sentence) for sentence in get_header(tree_lst)])
+	header = get_header(tree_lst)
 	n_atomic = len(remove_repeated_sentences(tree_lst))
-	print(get_main_matrix(get_header(tree_lst),n_atomic))
-	# to get the truth value of a sentence, we could make a method in the class that given the value (T or F) of the sub sentences, returns if the metasentence is T or F
+	matrix = get_main_matrix(header,n_atomic)
+	print("\nTruth table:\n")
+	print_truth_table(header, matrix)
+
 
