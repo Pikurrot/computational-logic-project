@@ -17,9 +17,36 @@ def is_atomic_sentence(string):
 				return False
 	return is_letter(string[0])
 
+def parentheses_match(string):
+	# Checks if parenthesis "(" match with its corresponding ")"
+	open_parentheses = 0
+	for i in range(len(string)):
+		if string[i] == "(":
+			open_parentheses += 1
+		elif string[i] == ")":
+			open_parentheses -= 1
+	return open_parentheses == 0
+
+
+def closed_parentheses(string):
+	# Checks that at every position there aren't more closed parentheses than open ones
+	closed_parentheses = 0
+	open_parentheses = 0
+	for i in range(len(string)):
+		if string[i] == "(":
+			open_parentheses += 1
+		elif string[i] == ")":
+			closed_parentheses += 1
+		if closed_parentheses > open_parentheses:
+			return False
+	return True
 
 def preprocessing_data(string):
 	#Simplify the expression symbols
+	if check_correspondance(string) == "Error" or not parentheses_match(string) or not closed_parentheses(string):
+		return "Error"
+	else:
+		string = remove_outer_parentheses(replace_square_brackets_parentheses(string))
 	return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-", "%").replace("||", "|").replace("&&", "&")
 
 
@@ -33,7 +60,7 @@ class Sentence:
 
 	def add_children(self, list_of_children):
 		for string in list_of_children:
-			self.children.append(Sentence(string, parent=self))
+			self.children.append(Sentence(remove_outer_parentheses(string), parent=self))
 
 	def get_value(self):
 		return self.value
@@ -62,11 +89,10 @@ def main_connector_pos(string):
 			open_parentheses -= 1
 	return None
 
-
 def remove_outer_parentheses(string):
 	# Returns the string without the outter unnecessary parentheses
 	if string[0] == "¬":
-		return None
+		return string
 	open_parentheses = 0
 	Lopen_parentheses = []
 	for i in range(len(string)):
@@ -76,11 +102,30 @@ def remove_outer_parentheses(string):
 			open_parentheses += 1
 		elif string[i] == ")":
 			open_parentheses -= 1
+	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
 	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
-	
-#--------------------------------------------------------------------------------------
-# We finished here
-#--------------------------------------------------------------------------------------
+
+def check_correspondance(string):
+	counter = 0
+	parentheses = []
+	for i in range(len(string)):
+		if string[i] == "[" or string[i] == "(":
+			counter += 1
+			parentheses.append(string[i] == "(")
+		if string[i] == "]":
+			if parentheses[counter-1] == False: 
+				counter -= 1
+				parentheses.pop()
+			else: return "Error"
+		elif string[i] == ")":
+			if parentheses[counter-1] == True: 
+				counter -= 1
+				parentheses.pop()
+			else: return "Error"
+
+
+def replace_square_brackets_parentheses(string):
+	return string.replace("[","(").replace("]",")")
 
 
 def divide_sentence(string, connector_pos):
@@ -112,7 +157,6 @@ def meta_sentence(string):
 	meta_language = "AB"
 	# extract subsentences
 	sub_sentences = divide_by_main_connector(string)
-	print(sub_sentences)
 	if sub_sentences == string:
 		sub_sentences = [handle_not(string)]
 		if sub_sentences[0] == string:
@@ -129,7 +173,6 @@ def meta_sentence(string):
 def is_meta_sentence_OK(string):
 	# True if the meta sentence of string is in the set of OK_sentences
 	sentence = meta_sentence(string)
-	print(sentence)
 	OK_sentences = ("A", "¬A", "A&B", "A|B", "A-B", "A%B", "A+B")
 	return sentence in OK_sentences
 
@@ -150,8 +193,7 @@ def syntactic_tree(list_sentences):
 		list_sentences_cousins = []  # list to save, as a layer, the children made at every branch
 		for sentence in list_sentences:
 			is_sentence_OK = is_meta_sentence_OK(sentence.value)  # True if the current sentence has no errors
-			if is_sentence_OK and not error and not is_atomic_sentence(
-			  sentence.get_value()):
+			if is_sentence_OK and not error and not is_atomic_sentence(sentence.get_value()):
 				divided_string = divide_by_main_connector(sentence.value)  # list of the 2 parts of the divided string
 				if divided_string == sentence.value:  # if the sentence has not changed
 					alt_string = handle_not(sentence.value)  # alternative string without the ¬
@@ -186,16 +228,19 @@ def print_tree(tree_lst):
 
 def main_task1_2():
 	print("task 1.2")
-	string = input("Enter a sentence: ")
-	#string = "(((p&q)|r))"
+	# string = input("Enter a sentence: ")
+	string = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
 	string = preprocessing_data(string)
-	print(remove_outer_parentheses(string))
-	# founder = Sentence(string)  # the founder sentence that will build the tree
-	# tree_lst = [founder]
-	# try:
-	# 	syntactic_tree(tree_lst)
-	# 	print_tree(tree_lst)
-	# except AssertionError as message:
-	# 	print_tree(tree_lst)  # here the tree will be printed until the layer with the error
-	# 	print(message)
-	# 	print("The Syntactic Tree was aborted.")
+	if string == "Error":
+		print("Error with parentheses or brackets! :(")
+		return
+	print(string)
+	founder = Sentence(string)  # the founder sentence that will build the tree
+	tree_lst = [founder]
+	try:
+		syntactic_tree(tree_lst)
+		print_tree(tree_lst)
+	except AssertionError as message:
+		print_tree(tree_lst)  # here the tree will be printed until the layer with the error
+		print(message)
+		print("The Syntactic Tree was aborted.")

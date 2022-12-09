@@ -1,5 +1,5 @@
 import numpy as np
-symbols = "&|-%+"  # "&|!" (and,or,sufficient,necessary,biconditional)
+symbols = "&|-%+"  # (and,or,sufficient,necessary,biconditional)
 all_symbols = symbols + "()¬"
 
 
@@ -18,92 +18,19 @@ def is_atomic_sentence(string):
 				return False
 	return is_letter(string[0])
 
-def parentheses_match(string):
-	# Checks if parenthesis "(" match with its corresponding ")"
-	open_parentheses = 0
-	for i in range(len(string)):
-		if string[i] == "(":
-			open_parentheses += 1
-		elif string[i] == ")":
-			open_parentheses -= 1
-	return open_parentheses == 0
-
-
-def closed_parentheses(string):
-	# Checks that at every position there aren't more closed parentheses than open ones
-	closed_parentheses = 0
-	open_parentheses = 0
-	for i in range(len(string)):
-		if string[i] == "(":
-			open_parentheses += 1
-		elif string[i] == ")":
-			closed_parentheses += 1
-		if closed_parentheses > open_parentheses:
-			return False
-	return True
 
 def preprocessing_data(string):
 	#Simplify the expression symbols
-	if check_correspondance(string) == "Error" or not parentheses_match(string) or not closed_parentheses(string):
-		return "Error"
-	else:
-		string = remove_outer_parentheses(replace_square_brackets_parentheses(string))
 	return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-", "%").replace("||", "|").replace("&&", "&")
 
 
-class Sentence:
-
-	def __init__(self, value, parent=None):
-		# Each sentence object has 3 parameters: the sentence as a string (value), the sentence of which it comes (parent) and the subsentences that can be formed from that sentence (children)
-		self._value = value
-		self._parent = parent
-		self._children = []
-		if self._parent == None: self._depth = 0
-		else: self._depth = self._parent.get_depth() + 1
-
-	def get_value(self):
-		return self._value
-
-	def get_parent(self):
-		return self._parent
-
-	def get_children(self):
-		return self._children
-
-	def get_depth(self):
-		return self._depth
-	
-	def add_children(self, list_of_children):
-		for string in list_of_children:
-			self._children.append(Sentence(remove_outer_parentheses(string), parent=self))
-
-	def get_truth_value(self,values):
-		# Returns the truth value of the sentence
-		if len(values) == 1:
-			return not values[0]
-		A,B = values
-		if meta_sentence(self._value) == "A&B": # and
-			return A and B
-		elif meta_sentence(self._value) == "A|B": # or
-			return A or B
-		elif meta_sentence(self._value) == "A-B": # ->
-			return not(A) or B
-		elif meta_sentence(self._value) == "A+B": # <->
-			return A == B
-		elif meta_sentence(self._value) == "A%B": # <-
-			return A or not(B) 
-
-	def __str__(self):
-		return self._value
-
-
 def main_connector_pos(string):
-	# Returns the position of the main connector (the one inside only 0 parentesis). If no main connector, or first character is "¬", returns None
+	# Returns the position of the main connector (the one inside only 1 parentesis). If no main connector, or first character is "¬", returns None
 	if string[0] == "¬":
 		return None
 	open_parentheses = 0
 	for i in range(len(string)):
-		if open_parentheses == 0 and string[i] in symbols:
+		if open_parentheses == 1 and string[i] in symbols:
 			return i
 		if string[i] == "(":
 			open_parentheses += 1
@@ -111,48 +38,10 @@ def main_connector_pos(string):
 			open_parentheses -= 1
 	return None
 
-def remove_outer_parentheses(string):
-	# Returns the string without the outter unnecessary parentheses
-	if string[0] == "¬":
-		return string
-	open_parentheses = 0
-	Lopen_parentheses = []
-	for i in range(len(string)):
-		if string[i] in symbols:
-			Lopen_parentheses.append(open_parentheses)
-		if string[i] == "(":
-			open_parentheses += 1
-		elif string[i] == ")":
-			open_parentheses -= 1
-	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
-	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
-
-def check_correspondance(string):
-	counter = 0
-	parentheses = []
-	for i in range(len(string)):
-		if string[i] == "[" or string[i] == "(":
-			counter += 1
-			parentheses.append(string[i] == "(")
-		if string[i] == "]":
-			if parentheses[counter-1] == False: 
-				counter -= 1
-				parentheses.pop()
-			else: return "Error"
-		elif string[i] == ")":
-			if parentheses[counter-1] == True: 
-				counter -= 1
-				parentheses.pop()
-			else: return "Error"
-
-
-def replace_square_brackets_parentheses(string):
-	return string.replace("[","(").replace("]",")")
-
 
 def divide_sentence(string, connector_pos):
 	# Returns the 2 parts of the string separated by a connector, excluding outer parentheses
-	return string[:connector_pos], string[connector_pos + 1:]
+	return string[1:connector_pos], string[connector_pos + 1:-1]
 
 
 def divide_by_main_connector(string):
@@ -195,8 +84,54 @@ def meta_sentence(string):
 def is_meta_sentence_OK(string):
 	# True if the meta sentence of string is in the set of OK_sentences
 	sentence = meta_sentence(string)
-	OK_sentences = ("A", "¬A", "A&B", "A|B", "A-B", "A%B", "A+B")
+	OK_sentences = ("A", "¬A", "(A&B)", "(A|B)", "(A-B)", "(A%B)", "(A+B)")
 	return sentence in OK_sentences
+
+
+class Sentence:
+
+	def __init__(self, value, parent=None):
+		# Each sentence object has 3 parameters: the sentence as a string (value), the sentence of which it comes (parent) and the subsentences that can be formed from that sentence (children)
+		self._value = value
+		self._parent = parent
+		self._children = []
+		if self._parent == None: self._depth = 0
+		else: self._depth = self._parent.get_depth() + 1
+
+	def get_value(self):
+		return self._value
+
+	def get_parent(self):
+		return self._parent
+
+	def get_children(self):
+		return self._children
+
+	def get_depth(self):
+		return self._depth
+
+	def add_children(self, list_of_children):
+		for string in list_of_children:
+			self._children.append(Sentence(string, parent=self))
+
+	def get_truth_value(self,values):
+		# Returns the truth value of the sentence
+		if len(values) == 1:
+			return not values[0]
+		A,B = values
+		if meta_sentence(self._value) == "(A&B)": # and
+			return A and B
+		elif meta_sentence(self._value) == "(A|B)": # or
+			return A or B
+		elif meta_sentence(self._value) == "(A-B)": # ->
+			return not(A) or B
+		elif meta_sentence(self._value) == "(A+B)": # <->
+			return A == B
+		elif meta_sentence(self._value) == "(A%B)": # <-
+			return A or not(B) 
+			
+	def __str__(self):
+		return self._value
 
 
 def sentences_are_atomic(list_sentences):
@@ -214,11 +149,11 @@ def syntactic_tree(list_sentences):
 	while not sentences_are_atomic(list_sentences):  # repeat until all sentences are atomic
 		list_sentences_cousins = []  # list to save, as a layer, the children made at every branch
 		for sentence in list_sentences:
-			is_sentence_OK = is_meta_sentence_OK(sentence._value)  # True if the current sentence has no errors
+			is_sentence_OK = is_meta_sentence_OK(sentence.get_value())  # True if the current sentence has no errors
 			if is_sentence_OK and not error and not is_atomic_sentence(sentence.get_value()):
-				divided_string = divide_by_main_connector(sentence._value)  # list of the 2 parts of the divided string
-				if divided_string == sentence._value:  # if the sentence has not changed
-					alt_string = handle_not(sentence._value)  # alternative string without the ¬
+				divided_string = divide_by_main_connector(sentence.get_value())  # list of the 2 parts of the divided string
+				if divided_string == sentence.get_value():  # if the sentence has not changed
+					alt_string = handle_not(sentence.get_value())  # alternative string without the ¬
 					sentence.add_children([alt_string])
 				else:
 					sentence.add_children(divided_string)
@@ -284,25 +219,14 @@ def get_main_matrix(header, n_atomic):
 			row += counter
 			counter2 = not(counter2) # flip every ...4,2,1 rows
 		counter //= 2
-	print("Header:")
-	print([o.get_value() for o in header])
-	print("Matrix:")
-	print(matrix)
-	print("----------------------------------------------")
 	for col in range(n_atomic,len(header)):
 		# get the sub_sentence
 		sub_sentence = divide_by_main_connector(header[col].get_value()) #(q|¬r) -> [q,¬r]
 		if sub_sentence == header[col].get_value():
 			sub_sentence = [handle_not(header[col].get_value())]
-		for e in range(len(sub_sentence)):
-			sub_sentence[e] = remove_outer_parentheses(sub_sentence[e])
-		
 		# check for the column of the sub_sentence
 		columns_pos = [c for c in range(len(header)) if header[c].get_value() in sub_sentence]
-		print(columns_pos)
 		columns = matrix[:,columns_pos].T
-		print(columns)
-		print("-------------")
 		for r in range(len(matrix)):
 			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))		
 	return matrix
@@ -325,13 +249,9 @@ def print_truth_table(header, matrix):
 	
 def main_task3():
 	print("task 3")
-	# string = input("Enter a sentence: ")
-	string = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
-	#meta language truth table de ¬(p || r) <-> (p && ¬ q) dona malament el ¬ 
+	string = input("Enter a sentence: ")
+	# string = "p"
 	string = preprocessing_data(string)
-	if string == "Error":
-		print("Error with parentheses or brackets! :(")
-		return
 	founder = Sentence(string)  # the founder sentence that will build the tree
 	tree_lst = [founder]
 	print("\nSyntactic tree\n")
@@ -349,4 +269,4 @@ def main_task3():
 	print("\nTruth table:\n")
 	print_truth_table(header, matrix)
 
-	# 
+
