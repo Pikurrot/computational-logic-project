@@ -102,3 +102,13 @@ To print the tree, print as much lines as atomic sentences, with their parents, 
 
 - Com es fa per saber que "(pp&q)" està bé però "pp" no?
 - El not sempre va fora de parentesis
+
+Task 2
+
+
+Task 5
+
+- Disjunction Normal Form
+- Conjunction Normal Form
+- NAND Form
+- NOR Form

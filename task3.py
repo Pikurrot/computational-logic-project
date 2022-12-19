@@ -44,12 +44,14 @@ def closed_parentheses(string):
 
 def preprocessing_data(string):
 	#Simplify the expression symbols
+	string = string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-", "%").replace("||", "|").replace("&&", "&")
 	if check_correspondance(string) == "Error" or not parentheses_match(string) or not closed_parentheses(string):
 		return "Error"
 	else:
 		string = remove_outer_parentheses(replace_square_brackets_parentheses(string))
-	return string.replace(" ", "").replace("<->", "+").replace("->", "-").replace("<-", "%").replace("||", "|").replace("&&", "&")
-
+		if string == False:
+			return "Error2"
+	return string
 
 class Sentence:
 
@@ -61,6 +63,13 @@ class Sentence:
 		if self._parent == None: self._depth = 0
 		else: self._depth = self._parent.get_depth() + 1
 
+	def add_children(self, list_of_children):
+		for string in list_of_children:
+			string = remove_outer_parentheses(string)
+			if string == False:
+				return "Error2"
+			self._children.append(Sentence(string,parent=self))
+	
 	def get_value(self):
 		return self._value
 
@@ -72,10 +81,6 @@ class Sentence:
 
 	def get_depth(self):
 		return self._depth
-	
-	def add_children(self, list_of_children):
-		for string in list_of_children:
-			self._children.append(Sentence(remove_outer_parentheses(string), parent=self))
 
 	def get_truth_value(self,values):
 		# Returns the truth value of the sentence
@@ -96,11 +101,8 @@ class Sentence:
 	def __str__(self):
 		return self._value
 
-
 def main_connector_pos(string):
 	# Returns the position of the main connector (the one inside only 0 parentesis). If no main connector, or first character is "¬", returns None
-	if string[0] == "¬":
-		return None
 	open_parentheses = 0
 	for i in range(len(string)):
 		if open_parentheses == 0 and string[i] in symbols:
@@ -112,18 +114,30 @@ def main_connector_pos(string):
 	return None
 
 def remove_outer_parentheses(string):
-	# Returns the string without the outter unnecessary parentheses
+	# Returns the string without the outer unnecessary parentheses
 	if string[0] == "¬":
 		return string
 	open_parentheses = 0
 	Lopen_parentheses = []
+	Lpositions = []
 	for i in range(len(string)):
 		if string[i] in symbols:
 			Lopen_parentheses.append(open_parentheses)
+			Lpositions.append(i)
 		if string[i] == "(":
 			open_parentheses += 1
 		elif string[i] == ")":
 			open_parentheses -= 1
+	count = 0
+	if len(Lopen_parentheses) > 0:
+		n = Lopen_parentheses.count(min(Lopen_parentheses))
+		for i,pos in enumerate(Lpositions):
+			if string[pos] == "&" and Lopen_parentheses[i] == min(Lopen_parentheses):
+				count += 1
+			if string[pos] == "|" and Lopen_parentheses[i] == min(Lopen_parentheses):
+				count -= 1
+		if count != n and count != -n and n > 1:
+			return False
 	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
 	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
 
@@ -135,15 +149,17 @@ def check_correspondance(string):
 			counter += 1
 			parentheses.append(string[i] == "(")
 		if string[i] == "]":
-			if parentheses[counter-1] == False: 
+			if parentheses[counter - 1] == False:
 				counter -= 1
 				parentheses.pop()
-			else: return "Error"
+			else:
+				return "Error"
 		elif string[i] == ")":
-			if parentheses[counter-1] == True: 
+			if parentheses[counter - 1] == True:
 				counter -= 1
 				parentheses.pop()
-			else: return "Error"
+			else:
+				return "Error"
 
 
 def replace_square_brackets_parentheses(string):
@@ -214,14 +230,16 @@ def syntactic_tree(list_sentences):
 	while not sentences_are_atomic(list_sentences):  # repeat until all sentences are atomic
 		list_sentences_cousins = []  # list to save, as a layer, the children made at every branch
 		for sentence in list_sentences:
-			is_sentence_OK = is_meta_sentence_OK(sentence._value)  # True if the current sentence has no errors
+			is_sentence_OK = is_meta_sentence_OK(sentence.get_value())  # True if the current sentence has no errors
 			if is_sentence_OK and not error and not is_atomic_sentence(sentence.get_value()):
-				divided_string = divide_by_main_connector(sentence._value)  # list of the 2 parts of the divided string
-				if divided_string == sentence._value:  # if the sentence has not changed
-					alt_string = handle_not(sentence._value)  # alternative string without the ¬
-					sentence.add_children([alt_string])
+				divided_string = divide_by_main_connector(sentence.get_value())  # list of the 2 parts of the divided string
+				if divided_string == sentence.get_value():  # if the sentence has not changed
+					alt_string = handle_not(sentence.get_value())  # alternative string without the ¬
+					if sentence.add_children([alt_string]) == False:
+						return "Error2"
 				else:
-					sentence.add_children(divided_string)
+					if sentence.add_children(divided_string) == False:
+						return "Error2"
 				list_sentences_cousins.extend(sentence.get_children())  # add children to list of cousins (otherwise, we end up only with the children of one of the parents, i.e. only the last branch would be saved)
 			else:
 				list_sentences_cousins.extend([sentence])  # add the sentence itself to the list
@@ -284,11 +302,7 @@ def get_main_matrix(header, n_atomic):
 			row += counter
 			counter2 = not(counter2) # flip every ...4,2,1 rows
 		counter //= 2
-	print("Header:")
-	print([o.get_value() for o in header])
-	print("Matrix:")
-	print(matrix)
-	print("----------------------------------------------")
+
 	for col in range(n_atomic,len(header)):
 		# get the sub_sentence
 		sub_sentence = divide_by_main_connector(header[col].get_value()) #(q|¬r) -> [q,¬r]
@@ -299,10 +313,7 @@ def get_main_matrix(header, n_atomic):
 		
 		# check for the column of the sub_sentence
 		columns_pos = [c for c in range(len(header)) if header[c].get_value() in sub_sentence]
-		print(columns_pos)
 		columns = matrix[:,columns_pos].T
-		print(columns)
-		print("-------------")
 		for r in range(len(matrix)):
 			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))		
 	return matrix
@@ -326,8 +337,8 @@ def print_truth_table(header, matrix):
 def main_task3():
 	print("task 3")
 	# string = input("Enter a sentence: ")
-	string = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
-	#meta language truth table de ¬(p || r) <-> (p && ¬ q) dona malament el ¬ 
+	string = "p & q"
+
 	string = preprocessing_data(string)
 	if string == "Error":
 		print("Error with parentheses or brackets! :(")
