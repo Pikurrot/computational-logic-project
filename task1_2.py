@@ -83,6 +83,20 @@ class Sentence:
 		return self.value
 
 
+def count_main_connectors(string):
+	# Returns the number of main connectors in a string
+	open_parentheses = 0
+	count = 0
+	for i in range(len(string)):
+		if open_parentheses == 0 and string[i] in symbols:
+			count += 1
+		if string[i] == "(":
+			open_parentheses += 1
+		elif string[i] == ")":
+			open_parentheses -= 1
+	return count
+
+
 def main_connector_pos(string):
 	# Returns the position of the main connector (the one inside only 0 parentesis). If no main connector, or first character is "¬", returns None
 	open_parentheses = 0
@@ -123,6 +137,7 @@ def remove_outer_parentheses(string):
 			return False
 	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
 	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
+
 
 def check_correspondance(string):
 	counter = 0
@@ -236,16 +251,20 @@ def syntactic_tree(list_sentences):
 		assert (not error), "The expression " + not_OK_sentence.get_value() + " is not a formula in propositional logic."  # exit the function if there was a not OK sentence detected in the layer
 
 
-def print_tree(tree_lst):
+def print_tree(tree_lst, original):
 	# Prints the syntactic tree.
 	for atomic_sentence in tree_lst:
 		# Print each atomic sentence in a line, with its branch of parents in its left
 		string = atomic_sentence.get_value()
-		parent = atomic_sentence
-		while parent.get_parent() != None:  # Until the founder (which has no parent)
+		current = atomic_sentence
+		while current.get_parent() != None:  # Until the founder (which has no parent)
 			# Adds the parent of the parent in the left of string
-			parent = parent.get_parent()
-			string = parent.get_value() + "  ==>  " + string
+			current = current.get_parent()
+			value = current.get_value()
+			parent = current.get_parent()
+			if parent != None and count_main_connectors(parent.get_value()) > 1 and not ("("+value+")" in original or value[0] == "¬" or is_atomic_sentence(value)):
+				continue
+			string = value + "  ==>  " + string
 		print(string)
 
 
@@ -253,8 +272,8 @@ def main_task1_2():
 	print("task 1.2")
 	# string = input("Enter a sentence: ")
 	string = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
-	string = "(p&&r) && (q||r) && (p->r)"
-	string = "p && q && r"
+	# string = "(p&&r) && (q||r) && (p->r)"
+	# string = "p && q && r"
 	string = preprocessing_data(string)
 	if string == "Error":
 		print("Error with parentheses or brackets! :(")
@@ -262,16 +281,14 @@ def main_task1_2():
 	elif string == "Error2":
 		print("Error with main connectors! :(")
 		return
-	print(string)
 	founder = Sentence(string)  # the founder sentence that will build the tree
 	tree_lst = [founder]
 	try:
 		if syntactic_tree(tree_lst) == "Error2":
 			print("Error with main connectors! :(")
 			return
-		print_tree(tree_lst)
+		print_tree(tree_lst, string)
 	except AssertionError as message:
-		print_tree(
-		 tree_lst)  # here the tree will be printed until the layer with the error
+		print_tree(tree_lst, string)  # here the tree will be printed until the layer with the error
 		print(message)
 		print("The Syntactic Tree was aborted.")

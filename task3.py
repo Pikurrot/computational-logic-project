@@ -101,6 +101,20 @@ class Sentence:
 	def __str__(self):
 		return self._value
 
+def count_main_connectors(string):
+	# Returns the number of main connectors in a string
+	open_parentheses = 0
+	count = 0
+	for i in range(len(string)):
+		if open_parentheses == 0 and string[i] in symbols:
+			count += 1
+		if string[i] == "(":
+			open_parentheses += 1
+		elif string[i] == ")":
+			open_parentheses -= 1
+	return count
+	
+
 def main_connector_pos(string):
 	# Returns the position of the main connector (the one inside only 0 parentesis). If no main connector, or first character is "¬", returns None
 	open_parentheses = 0
@@ -112,6 +126,7 @@ def main_connector_pos(string):
 		elif string[i] == ")":
 			open_parentheses -= 1
 	return None
+
 
 def remove_outer_parentheses(string):
 	# Returns the string without the outer unnecessary parentheses
@@ -140,6 +155,7 @@ def remove_outer_parentheses(string):
 			return False
 	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
 	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
+
 
 def check_correspondance(string):
 	counter = 0
@@ -253,16 +269,20 @@ def syntactic_tree(list_sentences):
 		assert (not error), "The expression " + not_OK_sentence.get_value() + " is not a formula in propositional logic."  # exit the function if there was a not OK sentence detected in the layer
 
 
-def print_tree(tree_lst):
+def print_tree(tree_lst, original):
 	# Prints the syntactic tree.
 	for atomic_sentence in tree_lst:
 		# Print each atomic sentence in a line, with its branch of parents in its left
 		string = atomic_sentence.get_value()
-		parent = atomic_sentence
-		while parent.get_parent() != None:  # Until the founder (which has no parent)
+		current = atomic_sentence
+		while current.get_parent() != None:  # Until the founder (which has no parent)
 			# Adds the parent of the parent in the left of string
-			parent = parent.get_parent()
-			string = parent.get_value() + "  ==>  " + string
+			current = current.get_parent()
+			value = current.get_value()
+			parent = current.get_parent()
+			if parent != None and count_main_connectors(parent.get_value()) > 1 and not ("("+value+")" in original or value[0] == "¬" or is_atomic_sentence(value)):
+				continue
+			string = value + "  ==>  " + string
 		print(string)
 
 
@@ -294,6 +314,7 @@ def get_header(tree_lst):
 def get_main_matrix(header, n_atomic):
 	matrix = np.zeros((2**n_atomic,len(header))) # initialize empty matrix
 	counter = int(2**n_atomic // 2) # e.g., ...4,2,1
+	# put T/F to the atomic sentences columns
 	for col in range(n_atomic):
 		row = 0
 		counter2 = True
@@ -305,21 +326,33 @@ def get_main_matrix(header, n_atomic):
 
 	for col in range(n_atomic,len(header)):
 		# get the sub_sentence
-		sub_sentence = divide_by_main_connector(header[col].get_value()) #(q|¬r) -> [q,¬r]
+		sub_sentence = divide_by_main_connector(header[col].get_value())
 		if sub_sentence == header[col].get_value():
 			sub_sentence = [handle_not(header[col].get_value())]
 		for e in range(len(sub_sentence)):
 			sub_sentence[e] = remove_outer_parentheses(sub_sentence[e])
 		
 		# check for the column of the sub_sentence
-		columns_pos = [c for c in range(len(header)) if header[c].get_value() in sub_sentence]
+		columns_pos = [c for c in range(len(header)) for s in sub_sentence if header[c].get_value() == s]
 		columns = matrix[:,columns_pos].T
 		for r in range(len(matrix)):
-			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))		
+			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))
 	return matrix
 	
 
 def print_truth_table(header, matrix):
+	skip_cols = []
+	original = header[-1].get_value()
+	for i,current in enumerate(header[:-1]):
+		parent = current.get_parent()
+		value = current.get_value()
+		if count_main_connectors(parent.get_value()) > 1 and not ("("+value+")" in original or value[0] == "¬" or is_atomic_sentence(value)):
+			skip_cols.append(i)
+
+	for i in sorted(skip_cols, reverse=True):
+		del header[i]
+		matrix = np.delete(matrix, i, axis = 1)
+
 	header = [str(s) for s in header]
 	header_str = "| "+" | ".join(header)+"|"
 	print("−"*len(header_str))
@@ -333,11 +366,12 @@ def print_truth_table(header, matrix):
 			row_lst.append(l//2*" " + row[c] + l//2*" " + " "*(l%2!=0))
 		print("| "+" | ".join(row_lst)+"|")
 	print("−"*len(header_str))
+
 	
 def main_task3():
 	print("task 3")
 	# string = input("Enter a sentence: ")
-	string = "p & q"
+	string = "(p&&r) && (q||r) && (p->r)"
 
 	string = preprocessing_data(string)
 	if string == "Error":
@@ -348,9 +382,9 @@ def main_task3():
 	print("\nSyntactic tree\n")
 	try:
 		syntactic_tree(tree_lst)
-		print_tree(tree_lst)
+		print_tree(tree_lst, string)
 	except AssertionError as message:
-		print_tree(tree_lst)  # here the tree will be printed until the layer with the error
+		print_tree(tree_lst, string)  # here the tree will be printed until the layer with the error
 		print(message)
 		print("The Syntactic Tree was aborted.")
 
@@ -360,4 +394,3 @@ def main_task3():
 	print("\nTruth table:\n")
 	print_truth_table(header, matrix)
 
-	# 
