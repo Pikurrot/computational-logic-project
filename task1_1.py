@@ -1,4 +1,4 @@
-symbols = "&|-%+"  # "&|!" (and,or,sufficient,necessary,biconditional)
+symbols = "&|-%+"  # (and,or,sufficient,necessary,biconditional)
 all_symbols = symbols + "()¬"
 
 

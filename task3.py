@@ -1,5 +1,5 @@
 import numpy as np
-symbols = "&|-%+"  # "&|!" (and,or,sufficient,necessary,biconditional)
+symbols = "&|-%+"  # (and,or,sufficient,necessary,biconditional)
 all_symbols = symbols + "()¬"
 
 
@@ -393,4 +393,3 @@ def main_task3():
 	matrix = get_main_matrix(header,n_atomic)
 	print("\nTruth table:\n")
 	print_truth_table(header, matrix)
-

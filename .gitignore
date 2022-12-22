@@ -1,0 +1,10 @@
+poetry.lock
+pyproject.toml
+.replit
+.breakpoints
+__pycache__
+venv
+zpythontask0.py
+zpythontask1.py
+zpythontask2.py
+tasks.txt
