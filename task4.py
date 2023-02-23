@@ -130,31 +130,36 @@ def main_connector_pos(string):
 
 def remove_outer_parentheses(string):
 	# Returns the string without the outer unnecessary parentheses
+	if is_atomic_sentence(string):
+		return string
 	if string[0] == "¬":
 		return string
 	open_parentheses = 0
 	Lopen_parentheses = []
 	Lpositions = []
+	maximum = 0
 	for i in range(len(string)):
-		if string[i] in symbols:
+		if string[i] in (symbols + "¬"):
 			Lopen_parentheses.append(open_parentheses)
 			Lpositions.append(i)
 		if string[i] == "(":
 			open_parentheses += 1
+			maximum += 1
 		elif string[i] == ")":
 			open_parentheses -= 1
-	count = 0
-	if len(Lopen_parentheses) > 0:
-		n = Lopen_parentheses.count(min(Lopen_parentheses))
-		for i,pos in enumerate(Lpositions):
-			if string[pos] == "&" and Lopen_parentheses[i] == min(Lopen_parentheses):
-				count += 1
-			if string[pos] == "|" and Lopen_parentheses[i] == min(Lopen_parentheses):
-				count -= 1
-		if count != n and count != -n and n > 1:
-			return False
-	if len(Lopen_parentheses) == 0 or min(Lopen_parentheses) == 0: return string
-	return string[min(Lopen_parentheses):-min(Lopen_parentheses)]
+
+	if len(Lopen_parentheses) == 0: return string[maximum:-maximum]
+
+	minimum = min(Lopen_parentheses)
+	main_connectors = [Lpositions[i] for i in range(len(Lpositions)) if Lopen_parentheses[i] == minimum]
+	if count_main_connectors(string) > 1 and not \
+		(all([string[i] in "¬&" for i in main_connectors]) 
+		or all([string[i] in "¬|" for i in main_connectors])
+		or all([string[i] in "¬+" for i in main_connectors])): 
+		return False # If +1 main conectors and not all are AND or not all are OR
+
+	if minimum == 0: return string
+	return string[minimum:-minimum]
 
 
 def check_correspondance(string):
@@ -269,23 +274,6 @@ def syntactic_tree(list_sentences):
 		assert (not error), "The expression " + not_OK_sentence.get_value() + " is not a formula in propositional logic."  # exit the function if there was a not OK sentence detected in the layer
 
 
-def print_tree(tree_lst, original):
-	# Prints the syntactic tree.
-	for atomic_sentence in tree_lst:
-		# Print each atomic sentence in a line, with its branch of parents in its left
-		string = atomic_sentence.get_value()
-		current = atomic_sentence
-		while current.get_parent() != None:  # Until the founder (which has no parent)
-			# Adds the parent of the parent in the left of string
-			current = current.get_parent()
-			value = current.get_value()
-			parent = current.get_parent()
-			if parent != None and count_main_connectors(parent.get_value()) > 1 and not ("("+value+")" in original or value[0] == "¬" or is_atomic_sentence(value)):
-				continue
-			string = value + "  ==>  " + string
-		print(string)
-
-
 def remove_repeated_sentences(lst):
 	# return a list with the sentences which their values are not repeated
 	values = [sentence.get_value() for sentence in lst]
@@ -340,56 +328,176 @@ def get_main_matrix(header, n_atomic):
 	return matrix
 	
 
-def print_truth_table(header, matrix):
-	skip_cols = []
-	original = header[-1].get_value()
-	for i,current in enumerate(header[:-1]):
-		parent = current.get_parent()
-		value = current.get_value()
-		if count_main_connectors(parent.get_value()) > 1 and not ("("+value+")" in original or value[0] == "¬" or is_atomic_sentence(value)):
-			skip_cols.append(i)
-
-	for i in sorted(skip_cols, reverse=True):
-		del header[i]
-		matrix = np.delete(matrix, i, axis = 1)
-
-	header = [str(s) for s in header]
-	header_str = "| "+" | ".join(header)+"|"
-	print("−"*len(header_str))
-	print(header_str)
-	for row in matrix:
-		print("|"+"−"*(len(header_str)-2)+"|")
-		row = ["T" if col == 1 else "F" for col in row]
-		row_lst = []
-		for c in range(len(row)):
-			l = (len(header[c])-1)
-			row_lst.append(l//2*" " + row[c] + l//2*" " + " "*(l%2!=0))
-		print("| "+" | ".join(row_lst)+"|")
-	print("−"*len(header_str))
-
 	
-def main_task3():
-	print("task 3")
-	# string = input("Enter a sentence: ")
-	string = "((a|b)&(a-b)&(b-a))-(a&b)"
+def is_tautology(matrix, n_atomic):
+	# returns if it's a tautology and counter-examples
+	last_col = matrix[:,-1]
+	if all(last_col):
+		return True,[]
+	else:
+		r = list(last_col).index(0)
+		row = matrix[r]
+		atomic_sentences = row[:n_atomic]
+		return False,atomic_sentences
+
+
+def is_contradiction(matrix, n_atomic):
+	# returns if it's a contradiction and counter-examples
+	last_col = matrix[:,-1]
+	if not any(last_col):
+		return True,[]
+	else:
+		r = list(last_col).index(1)
+		row = matrix[r]
+		atomic_sentences = row[:n_atomic]
+		return False,atomic_sentences
+
+
+def is_satisfiable(matrix, n_atomic):
+	# returns if the sentence is satisfiable (if it can be T) and an example
+	last_col = matrix[:,-1]
+	if any(last_col):
+		r = list(last_col).index(1)
+		row = matrix[r]
+		atomic_sentences = row[:n_atomic]
+		return True,atomic_sentences
+	else:
+		return False,[]
+
+
+def main_connectors_pos(string):
+	# Returns a list with the position of the main connectors (multiple) (the ones inside only 1 parentesis)
+	open_parentheses = 0
+	positions = []
+	for i in range(len(string)):
+		if open_parentheses == 0 and string[i] in symbols:
+			positions.append(i)
+		if string[i] == "(":
+			open_parentheses += 1
+		elif string[i] == ")":
+			open_parentheses -= 1
+	return positions
+
+def separate_parts_dict(string,funct):
+	# returns a dictionary with keys: original parts of the expression separated by the main/s connector/s; and values: these parts with a the given function applied
+	connectors_pos = main_connectors_pos(string)
+	parts = {}
+	prev_pos = 0
+	for pos in connectors_pos:
+		part = string[prev_pos:pos]
+		parts[part] = funct(part)
+		prev_pos = pos+1
+	part = string[prev_pos:]
+	parts[part] = funct(part)
+	return parts
+
+def remove_unnecessary_parentheses(string, origin=True):
+	# returns a string without unnecessary parentheses (outer and inner) without changing the original structure
+	if string[0] == "¬":
+		return "¬" + remove_unnecessary_parentheses(string[1:],False)
+	elif string[0] == "(":
+		inside = remove_outer_parentheses(string)
+		if count_main_connectors(inside) == 0:
+			return remove_unnecessary_parentheses(inside,False)
+		else:
+			parts = separate_parts_dict(inside, lambda x: remove_unnecessary_parentheses(x,False))
+			for part,new in parts.items():
+				inside = inside.replace(part,new)
+			if origin:
+				return inside
+			else:
+				return "(" + inside + ")"
+	else:
+		return string
+
+
+def main_task4():
+	print("task 4")
+
+	menu_num = int(input("PLEASE, CHOOSE AN OPTION:\n1 - Tautology\n2 - Contradiction\n3 - Logical Equivalence\n4 - Satisfiability\n5 - Logical Consequence\n"))
+	if menu_num == 1:
+		string = input("Enter sentence: ")
+	elif menu_num == 2:
+		string = input("Enter sentence: ")
+	elif menu_num == 3:
+		string1 = input("Enter sentence 1: ")
+		string2 = input("Enter sentence 2: ")
+		string = "(" + string1 + ")<->(" + string2 + ")"
+		print(string)
+	elif menu_num == 4:
+		num_sentences = int(input("Enter number of sentences: "))
+		sentences = []
+		for i in range(num_sentences):
+			sentences.append(input("Enter sentence " + str(i) + ": "))
+		string = "(" + ")&(".join(sentences) + ")"
+	elif menu_num == 5:
+		num_premises = int(input("Enter number of premises:"))
+		premises = []
+		for i in range(num_premises):
+			premises.append(input("Enter premise " + str(i) + ": "))
+		consequence = input("Enter consequence: ")
+		string = "(" + ")&(".join(premises) + ")"
+		string = "(" + string + ")-(" + consequence + ")"
+	else:
+		print("The option doesn't exist")
+		return
+
 
 	string = preprocessing_data(string)
+	string = remove_unnecessary_parentheses(string)
 	if string == "Error":
 		print("Error with parentheses or brackets! :(")
 		return
 	founder = Sentence(string)  # the founder sentence that will build the tree
 	tree_lst = [founder]
-	print("\nSyntactic tree\n")
 	try:
 		syntactic_tree(tree_lst)
-		print_tree(tree_lst, string)
 	except AssertionError as message:
-		print_tree(tree_lst, string)  # here the tree will be printed until the layer with the error
 		print(message)
 		print("The Syntactic Tree was aborted.")
-
+		return
+	
 	header = get_header(tree_lst)
 	n_atomic = len(remove_repeated_sentences(tree_lst))
 	matrix = get_main_matrix(header,n_atomic)
-	print("\nTruth table:\n")
-	print_truth_table(header, matrix)
+
+	if menu_num == 1:
+		is_true,counter_examples = is_tautology(matrix, n_atomic)
+		if is_true:
+			print("Congratulations. The sentence is a Tautology")
+		else:
+			print("The sentence is not a Tautology. You can find the next counter-example:")
+			for i,atomic in enumerate(counter_examples):
+				print(str(header[i]), "=", bool(atomic))
+	elif menu_num == 2:
+		is_true,counter_examples = is_contradiction(matrix, n_atomic)
+		if is_true:
+			print("Congratulations. The sentence is a Contradiction")
+		else:
+			print("The sentence is not a Contradiction. You can find the next counter-example:")
+			for i,atomic in enumerate(counter_examples):
+				print(str(header[i]), "=", bool(atomic))
+	elif menu_num == 3:
+		is_true,counter_examples = is_tautology(matrix, n_atomic)
+		if is_true:
+			print("Congratulations. The sentences are logically equivalent")
+		else:
+			print("The sentence are not logically equivalent. You can find the next counter-example:")
+			for i,atomic in enumerate(counter_examples):
+				print(str(header[i]), "=", bool(atomic))
+	elif menu_num == 4:
+		is_true,examples = is_satisfiable(matrix, n_atomic)
+		if is_true:
+			print("Congratulations. The sentences are satisfiable. You can find the next example:")
+			for i,atomic in enumerate(examples):
+				print(str(header[i]), "=", bool(atomic))
+		else:
+			print("The sentences are not satisfiable.")
+	elif menu_num == 5:
+		is_true,counter_examples = is_tautology(matrix, n_atomic)
+		if is_true:
+			print("Congratulations. The conclusion is a logical consequence from the premises.")
+		else:
+			print("The Conclusion is not a logical consequence from the premises. You can find the next counter-example:")
+			for i,atomic in enumerate(counter_examples):
+				print(str(header[i]), "=", bool(atomic))

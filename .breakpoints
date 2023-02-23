@@ -1,3 +1,12 @@
 {
-  "files": {}
+  "files": {
+    "task1_2.py": [
+      {
+        "id": "e6ad3657-4ec2-47cc-b1c1-da661dc6e037",
+        "line": 278,
+        "version": 4383,
+        "index": 9125
+      }
+    ]
+  }
 }
