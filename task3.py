@@ -333,7 +333,7 @@ def get_main_matrix(header, n_atomic):
 			sub_sentence[e] = remove_outer_parentheses(sub_sentence[e])
 		
 		# check for the column of the sub_sentence
-		columns_pos = [c for s in sub_sentence for c in range(len(header)) if header[c].get_value() == s]
+		columns_pos = [c for c in range(len(header)) for s in sub_sentence if header[c].get_value() == s]
 		columns = matrix[:,columns_pos].T
 		for r in range(len(matrix)):
 			matrix[r,col] = header[col].get_truth_value(tuple(columns[:,r]))
@@ -371,7 +371,7 @@ def print_truth_table(header, matrix):
 def main_task3():
 	print("task 3")
 	# string = input("Enter a sentence: ")
-	string = "((a|b)&(a-b)&(b-a))-(a&b)"
+	string = "(p&&r) && (q||r) && (p->r)"
 
 	string = preprocessing_data(string)
 	if string == "Error":

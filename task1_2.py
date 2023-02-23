@@ -271,7 +271,7 @@ def print_tree(tree_lst, original):
 def main_task1_2():
 	print("task 1.2")
 	# string = input("Enter a sentence: ")
-	string = "p&(¬q->t)"
+	string = "(p -> ¬r) && ¬(¬(p || r) <-> (p && ¬ q))"
 	# string = "(p&&r) && (q||r) && (p->r)"
 	# string = "p && q && r"
 	string = preprocessing_data(string)
